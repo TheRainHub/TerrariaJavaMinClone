@@ -4,6 +4,6 @@ module org.example.game {
 
     requires com.almasb.fxgl.all;
 
-    opens org.example.game to javafx.fxml;
-    exports org.example.game;
+    opens engine to javafx.fxml;
+    exports engine;
 }

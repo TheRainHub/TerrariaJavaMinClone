@@ -14,7 +14,6 @@ import static world.TileType.AIR;
 import static world.TileType.DIRT;
 
 public class GameEngine {
-
     private final GraphicsContext gc;
     private final int width;
     private final int height;
@@ -31,7 +30,6 @@ public class GameEngine {
         this.width = width;
         this.height = height;
 
-        // Загрузи фон (файл должен лежать в resources!)
         try {
             backgroundImage = new Image(getClass().getResourceAsStream("/Forest_background_9.png"));
         } catch (Exception e) {
@@ -39,7 +37,12 @@ public class GameEngine {
         }
 
         this.world = new World("/level1.txt");
-        this.player = new Player(50, 100);
+        int spawnTileX = world.getWidth() / 2;
+        int spawnTileY = world.getSurfaceY(spawnTileX) - 1;
+        int tileSize   = 16;
+
+        this.player = new Player(spawnTileX * tileSize,
+                spawnTileY * tileSize);
         this.camera = new Camera(0, 0, width, height);
 
         gameLoop = new AnimationTimer() {
@@ -98,14 +101,13 @@ public class GameEngine {
     }
 
     private void renderUI() {
-        // TODO: Инвентарь, панель, подсказки
+
     }
 
-    // Управление — события идут напрямую из GameApp
     public void handleKeyPress(KeyEvent event) {
         switch (event.getCode()) {
             case W:
-            case UP:
+            case SPACE:
                 player.jump();
                 break;
             case A:
@@ -141,7 +143,6 @@ public class GameEngine {
             world.placeTile(worldX, worldY, DIRT);
         }
     }
-
     public void handleMouseRelease(MouseEvent event) {}
     public void handleMouseMove(MouseEvent event) {}
 }

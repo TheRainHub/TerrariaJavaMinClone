@@ -68,6 +68,15 @@ public class World {
         }
     }
 
+    public int getSurfaceY(int x) {
+        for (int y = 0; y < height; y++) {
+            if (tiles[y][x] == TileType.AIR) {
+                return y;
+            }
+        }
+        return 0;
+    }
+
     public void mineTile(int x, int y) {
         if (inBounds(x, y) && tiles[y][x] != TileType.AIR) tiles[y][x] = TileType.AIR;
     }
@@ -75,6 +84,7 @@ public class World {
         if (inBounds(x, y) && tiles[y][x] == TileType.AIR) tiles[y][x] = type;
     }
     private boolean inBounds(int x, int y) { return x >= 0 && x < width && y >= 0 && y < height; }
+
 
     public boolean isSolid(int x, int y) {
         if (x < 0 || y < 0 || x >= width || y >= height) return true; // За границами — всегда solid

@@ -6,41 +6,78 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 
 public class Player {
+
+    private static final int PLAYER_WIDTH  = 16;
+    private static final int PLAYER_HEIGHT = 38;
+    private static final int TILE_SIZE     = 32;
+
+    private static final double SPEED       = 150;
+    private static final double JUMP_POWER  = -350;
+    private static final double GRAVITY     = 900;
+    private static final double MAX_FALL    = 600;
+
     private double x, y;
     private double vx, vy;
     private boolean movingLeft, movingRight, onGround;
-    private static final double SPEED = 150, JUMP_POWER = -350, GRAVITY = 900;
 
     public Player(double x, double y) { this.x = x; this.y = y; }
 
-    public void moveLeft() { movingLeft = true; }
-    public void moveRight() { movingRight = true; }
-    public void stopMovingLeft() { movingLeft = false; }
-    public void stopMovingRight() { movingRight = false; }
-    public void jump() { if (onGround) vy = JUMP_POWER; }
+    /* ───────────── управление ───────────── */
+    public void moveLeft()      { movingLeft  = true;  }
+    public void moveRight()     { movingRight = true;  }
+    public void stopMovingLeft(){ movingLeft  = false; }
+    public void stopMovingRight(){movingRight = false; }
+    public void jump()          { if (onGround) vy = JUMP_POWER; }
 
     public void update(double dt, World world) {
-        double ax = 0;
-        if (movingLeft) ax -= SPEED;
-        if (movingRight) ax += SPEED;
-        vx = ax;
+        if (movingLeft)  vx = -SPEED;
+        else if (movingRight) vx =  SPEED;
+        else vx = 0;
+
         vy += GRAVITY * dt;
-        x += vx * dt;
-        y += vy * dt;
-        // Простая коллизия по полу
-        if (y > world.getHeight() * 32 - 64) {
-            y = world.getHeight() * 32 - 64;
+        if (vy >  MAX_FALL) vy =  MAX_FALL;
+        if (vy < -MAX_FALL) vy = -MAX_FALL;
+
+        updatePosition(dt, world);
+    }
+
+    private void updatePosition(double dt, World world) {
+        double newX = x + vx * dt;
+        if (!checkCollision(newX, y, world)) {
+            x = newX;
+        } else {
+            vx = 0;
+        }
+
+        double newY = y + vy * dt;
+        if (!checkCollision(x, newY, world)) {
+            y = newY;
+            onGround = false;
+        } else {
+            if (vy > 0) {
+                onGround = true;
+            }
             vy = 0;
-            onGround = true;
-        } else onGround = false;
+        }
+    }
+
+    private boolean checkCollision(double px, double py, World world) {
+        int left   = (int) (px                   / TILE_SIZE);
+        int right  = (int) ((px + PLAYER_WIDTH  - 1) / TILE_SIZE);
+        int top    = (int) (py                   / TILE_SIZE);
+        int bottom = (int) ((py + PLAYER_HEIGHT - 1) / TILE_SIZE);
+
+        return world.isSolid(left,  top   ) ||
+                world.isSolid(right, top   ) ||
+                world.isSolid(left,  bottom) ||
+                world.isSolid(right, bottom);
     }
 
     public void render(GraphicsContext gc, Camera camera) {
-        int tileSize = 32;
         double sx = x - camera.getWorldX();
         double sy = y - camera.getWorldY();
         gc.setFill(Color.BLUE);
-        gc.fillOval(sx, sy, tileSize, tileSize);
+        gc.fillRect(sx, sy, PLAYER_WIDTH, PLAYER_HEIGHT);
     }
 
     public double getX() { return x; }

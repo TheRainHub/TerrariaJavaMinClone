@@ -10,8 +10,8 @@ import javafx.stage.Stage;
 
 public class GameApp extends Application {
 
-    public static final int WIDTH = 1024;
-    public static final int HEIGHT = 768;
+    public static final int WIDTH = 1720;
+    public static final int HEIGHT = 820;
 
     @Override
     public void start(Stage primaryStage) {

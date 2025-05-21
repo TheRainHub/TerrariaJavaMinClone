@@ -1,5 +1,7 @@
 package engine;
 
+import entity.TileConstants;
+
 public class Camera {
     private double worldX, worldY;
     public final int viewWidth;
@@ -18,12 +20,16 @@ public class Camera {
         if (worldX < 0) worldX = 0;
         if (worldY < 0) worldY = 0;
 
-        // Можно добавить ограничения по размеру мира
     }
 
     public double getWorldX() { return worldX; }
     public double getWorldY() { return worldY; }
 
-    public int screenToWorldX(double screenX) { return (int)(worldX + screenX) / 32; }
-    public int screenToWorldY(double screenY) { return (int)(worldY + screenY) / 32; }
+    public int screenToWorldTileX(double screenX) {
+        return (int) ((worldX + screenX) / TileConstants.TILE_SIZE);
+    }
+    public int screenToWorldTileY(double screenY) {
+        return (int) ((worldY + screenY) / TileConstants.TILE_SIZE);
+    }
+
 }

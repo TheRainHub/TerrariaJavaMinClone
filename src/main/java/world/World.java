@@ -2,16 +2,22 @@ package world;
 
 import engine.Camera;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import static world.TileType.GRASS_TOP;
+
 public class World {
     private final int width;
     private final int height;
     private TileType[][] tiles;
+    private java.util.Map<TileType, javafx.scene.image.Image> textures;
+
 
     public World(String resourceName) {
         List<String> lines = new ArrayList<>();
@@ -34,38 +40,71 @@ public class World {
             String row = lines.get(y);
             for (int x = 0; x < width; x++) {
                 char c = row.charAt(x);
-                tiles[y][x] = (c == '#') ? TileType.DIRT : TileType.AIR;
+                switch (c) {
+                    case 'G' -> tiles[y][x] = GRASS_TOP;
+                    case '#' -> tiles[y][x] = TileType.DIRT;
+                    case 'S' -> tiles[y][x] = TileType.STONE;
+                    case 'T' -> tiles[y][x] = TileType.TREE_TRUNK;
+                    case 'L' -> tiles[y][x] = TileType.TREE_LEAVES;
+                    default  -> tiles[y][x] = TileType.AIR;
+                }
             }
         }
     }
 
+    public void setTextures(java.util.Map<TileType, javafx.scene.image.Image> tex) {
+        this.textures = tex;
+    }
 
     public void render(GraphicsContext gc, Camera camera) {
-        int tileSize = 32;
-        int startX = (int)(camera.getWorldX() / tileSize);
-        int startY = (int)(camera.getWorldY() / tileSize);
-        int tilesX = (int)Math.ceil(camera.viewWidth / (double)tileSize) + 2;
-        int tilesY = (int)Math.ceil(camera.viewHeight / (double)tileSize) + 2;
+        final int tileSize = 16;
 
-        for (int y = 0; y < tilesY; y++) {
-            int wy = startY + y;
-            if (wy >= height) continue;
-            for (int x = 0; x < tilesX; x++) {
-                int wx = startX + x;
-                if (wx >= width) continue;
-                TileType tile = tiles[wy][wx];
-                double sx = x * tileSize - (camera.getWorldX() % tileSize);
-                double sy = y * tileSize - (camera.getWorldY() % tileSize);
-                switch (tile) {
-                    case DIRT:
-                        gc.setFill(Color.SIENNA); break;
-                    case AIR:
-                        gc.setFill(Color.TRANSPARENT); break;
+        int firstTileX = (int)(camera.getWorldX() / tileSize);
+        int firstTileY = (int)(camera.getWorldY() / tileSize);
+        int visibleTilesX = (int)Math.ceil(camera.viewWidth / (double)tileSize) + 2;
+        int visibleTilesY = (int)Math.ceil(camera.viewHeight / (double)tileSize) + 2;
+
+        for (int tileY = 0; tileY < visibleTilesY; tileY++) {
+            for (int tileX = 0; tileX < visibleTilesX; tileX++) {
+
+                int worldX = firstTileX + tileX;
+                int worldY = firstTileY + tileY;
+
+                if (worldX >= width || worldY >= height) continue;
+
+                TileType tile = tiles[worldY][worldX];
+
+                // Автозамена верхнего слоя земли
+                boolean isTopEmpty = isTopEmpty(worldX, worldY);
+                if (tile == TileType.DIRT && isTopEmpty) tile = TileType.GRASS_TOP;
+                if (tile == TileType.GRASS_TOP && !isTopEmpty) tile = TileType.DIRT;
+
+                // Координаты на экране
+                double screenX = tileX * tileSize - (camera.getWorldX() % tileSize);
+                double screenY = tileY * tileSize - (camera.getWorldY() % tileSize);
+
+
+                Image texture = (textures != null) ? textures.get(tile) : null;
+
+                if (texture != null) {
+                    gc.drawImage(texture, screenX, screenY, tileSize, tileSize);
+                } else {
+                    gc.setFill(getTileColor(tile));
+                    if (tile != TileType.AIR) {
+                        gc.fillRect(screenX, screenY, tileSize, tileSize);
+                    }
                 }
-                if (tile != TileType.AIR)
-                    gc.fillRect(sx, sy, tileSize, tileSize);
             }
         }
+    }
+
+    private Paint getTileColor(TileType tile) {
+        return switch (tile) {
+            case GRASS_TOP -> Color.LIMEGREEN;
+            case DIRT      -> Color.SIENNA;
+            case STONE     -> Color.DARKGRAY;
+            default        -> Color.TRANSPARENT;
+        };
     }
 
     public int getSurfaceY(int x) {
@@ -85,10 +124,13 @@ public class World {
     }
     private boolean inBounds(int x, int y) { return x >= 0 && x < width && y >= 0 && y < height; }
 
+    private boolean isTopEmpty(int x, int y) {
+        return !isSolid(x, y-1);
+    }
 
     public boolean isSolid(int x, int y) {
-        if (x < 0 || y < 0 || x >= width || y >= height) return true; // За границами — всегда solid
-        return tiles[y][x].isSolid(); // Используем метод TileType
+        if (x < 0 || y < 0 || x >= width || y >= height) return true;
+        return tiles[y][x].isSolid();
     }
 
     public int getHeight() {

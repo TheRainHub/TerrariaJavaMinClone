@@ -9,11 +9,15 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import util.TileConstants;
+import util.Inventory;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 
 public class GameEngine {
     private final GraphicsContext gc;
@@ -27,6 +31,8 @@ public class GameEngine {
     private Image backgroundImage;
     private AnimationTimer loop;
     private boolean running = false;
+    private final Inventory inventory;
+    private static final String INVENTORY_FILE = "src/main/resources/inventory.txt";
 
 
     public GameEngine(GraphicsContext gc, int width, int height) {
@@ -35,7 +41,6 @@ public class GameEngine {
         this.height = height;
         TileRegistry registry = new TileRegistry();
         TileType[][] tiles   = WorldLoader.loadFromResource("/map.txt", registry);
-
         this.world    = new World(tiles);
         this.renderer = new WorldRenderer(registry.getAllTextures());
 
@@ -48,6 +53,13 @@ public class GameEngine {
                 util.TerrainGenerator.generatePerlinLike(lvl.toString(), 200, 60, System.currentTimeMillis());
         } catch (Exception e) { throw new RuntimeException(e); }
 
+        inventory = new Inventory();
+        try {
+            inventory.loadFromFile(INVENTORY_FILE);
+        } catch (IOException e) {
+            System.err.println("Failed to load inventory: " + e.getMessage());
+            // инициализировать пустым или дефолтным
+        }
 
         int spawnX  = world.getWidth() / 2;
         int spawnY  = world.getSurfaceY(spawnX) - 1;
@@ -64,6 +76,7 @@ public class GameEngine {
                 last = now;
                 update(dt);
                 render();
+                renderUI();
             }
         };
     }
@@ -76,6 +89,7 @@ public class GameEngine {
     private void update(double dt) {
         player.update(dt, world);
         camera.centerOn(player.getX(), player.getY());
+
     }
 
     private void render() {
@@ -94,7 +108,29 @@ public class GameEngine {
 
         renderer.render(gc, camera, world.getTiles());
         player.render(gc, camera);
+        renderUI();
     }
+
+    private void renderUI() {
+        gc.setFill(Color.WHITE);
+        gc.setFont(Font.font("Consolas", FontWeight.NORMAL, 14));
+        int y = 20;
+        for (var entry : inventory.getItems().entrySet()) {
+            String text = entry.getKey() + " x" + entry.getValue();
+            gc.fillText(text, 10, y);
+            y += 20;
+        }
+    }
+
+
+    public void saveInventory() {
+        try {
+            inventory.saveToFile(INVENTORY_FILE);
+        } catch (IOException e) {
+            System.err.println("Failed to save inventory: " + e.getMessage());
+        }
+    }
+
 
     public void handleKeyPress(KeyEvent e) {
         switch (e.getCode()) {

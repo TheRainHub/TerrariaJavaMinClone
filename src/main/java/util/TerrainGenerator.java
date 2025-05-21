@@ -6,29 +6,33 @@ import java.util.Random;
 
 public class TerrainGenerator {
 
-    public static void generatePerlinLike(String file, int width, int height, long seed) throws IOException {
+    public static void generatePerlinLike(String file, int w, int h, long seed) throws IOException {
         Random rnd = new Random(seed);
-        int[] ground = new int[width];
+        int[] g = new int[w];
 
-        ground[0] = height / 2;
-        for (int x = 1; x < width; x++) {
-            ground[x] = ground[x-1] + rnd.nextInt(3) - 1;
-            ground[x] = Math.max(height/4, Math.min(3*height/4, ground[x]));
+        g[0] = h / 2;
+        for (int x = 1; x < w; x++) {
+            g[x] = g[x-1] + rnd.nextInt(3) - 1;
+            g[x] = Math.max(h/4, Math.min(3*h/4, g[x]));
         }
-        for (int k = 0; k < 2; k++)
-            for (int x = 1; x < width-1; x++)
-                ground[x] = (ground[x-1] + ground[x] + ground[x+1]) / 3;
+        for (int k = 0; k < 2; k++)                       // сглаживание
+            for (int x = 1; x < w-1; x++)
+                g[x] = (g[x-1] + g[x] + g[x+1]) / 3;
 
-        try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
-            for (int y = 0; y < height; y++) {
+        try (PrintWriter pw = new PrintWriter(file)) {
+            for (int y = 0; y < h; y++) {
                 StringBuilder row = new StringBuilder();
-                for (int x = 0; x < width; x++) {
-                    row.append(y >= ground[x] ? '#' : '.');
+                for (int x = 0; x < w; x++) {
+                    if (y < g[x])               row.append('.');   // воздух
+                    else if (y == g[x])         row.append('G');   // трава
+                    else if (y < g[x] + 4)      row.append('#');   // земля
+                    else                        row.append('S');   // камень
                 }
-                pw.println(row.toString());
+                pw.println(row);
             }
         }
     }
+
 
     public static void generateCaves(String file, int width, int height, long seed) throws IOException {
         char[][] map = new char[height][width];
@@ -49,6 +53,6 @@ public class TerrainGenerator {
     }
 
     public static void main(String[] args) throws IOException {
-        generatePerlinLike("src/main/resources/level1.txt", 200, 60, System.currentTimeMillis());
+        generatePerlinLike("src/main/resources/level1.txt", 200, 100, System.currentTimeMillis());
     }
 }

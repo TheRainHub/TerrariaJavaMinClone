@@ -1,17 +1,40 @@
 package world;
 
 public enum TileType {
-    GRASS_TOP(true),
-    GRASS_LEFT(true),
-    GRASS_RIGHT(true),
-    GRASS_BOTTOM(true),
-    DIRT(true),
-    STONE(true),
-    TREE_TRUNK(true),
-    TREE_LEAVES(false),
-    AIR(false);
+    AIR(false, false, null),
+    DIRT(true, true, "dirt"),
+    STONE(true, true, "stone"),
+    GRASS_TOP(true, true, "grass_top"),
+    GRASS_LEFT(true, true, "grass_left"),
+    GRASS_RIGHT(true, true, "grass_right"),
+    GRASS_BOTTOM(true, true, "grass_bottom"),
+    TREE_TRUNK(false, true, "trunk"),
+    TREE_LEAVES(false, true, "leaves");
+
 
     private final boolean solid;
-    TileType(boolean s){ solid=s; }
-    public boolean isSolid(){ return solid; }
+    private final boolean breakable;
+    private final String textureKey;
+
+    TileType(boolean solid, boolean breakable, String textureKey) {
+        this.solid = solid;
+        this.breakable = breakable;
+        this.textureKey = textureKey;
+    }
+
+    public boolean isSolid() {
+        return solid;
+    }
+
+    public boolean isBreakable() {
+        return breakable;
+    }
+
+    public String getTextureKey() {
+        return textureKey;
+    }
+
+    public boolean isAir() {
+        return this == AIR;
+    }
 }

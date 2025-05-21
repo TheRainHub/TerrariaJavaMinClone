@@ -1,14 +1,14 @@
 package world;
 
 public enum TileType {
-    AIR(false),
-    GRASS(true),
+    GRASS_TOP(true),
     DIRT(true),
     STONE(true),
-    TREE_TRUNK(false),
-    TREE_LEAVES(false);
+    TREE_TRUNK(true),
+    TREE_LEAVES(false),
+    AIR(false);
 
     private final boolean solid;
-    TileType(boolean solid) { this.solid = solid; }
-    public boolean isSolid() { return solid; }
+    TileType(boolean s){ solid=s; }
+    public boolean isSolid(){ return solid; }
 }

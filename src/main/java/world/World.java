@@ -73,10 +73,21 @@ public class World {
 
                 TileType tile = tiles[worldY][worldX];
 
-                // Автозамена верхнего слоя земли
-                boolean isTopEmpty = isTopEmpty(worldX, worldY);
-                if (tile == TileType.DIRT && isTopEmpty) tile = TileType.GRASS_TOP;
-                if (tile == TileType.GRASS_TOP && !isTopEmpty) tile = TileType.DIRT;
+                if (tile == TileType.DIRT || tile == TileType.GRASS_TOP) {
+                    int mask = neighbourMask(worldX, worldY);     // 0..15
+
+                    // Если верх пуст → трава сверху
+                    if ((mask & 1) != 0)       tile = TileType.GRASS_TOP;
+                        // иначе если слева пусто
+                    else if ((mask & 8) != 0)  tile = TileType.GRASS_LEFT;
+                        // иначе если справа пусто
+                    else if ((mask & 2) != 0)  tile = TileType.GRASS_RIGHT;
+                        // иначе если снизу пусто (висящий блок)
+                    else if ((mask & 4) != 0)  tile = TileType.GRASS_BOTTOM;
+                        // иначе остаётся обычный DIRT
+                    else                       tile = TileType.DIRT;
+                }
+
 
                 // Координаты на экране
                 double screenX = tileX * TileConstants.TILE_SIZE - (camera.getWorldX() % TileConstants.TILE_SIZE);
@@ -100,6 +111,7 @@ public class World {
     private Paint getTileColor(TileType tile) {
         return switch (tile) {
             case GRASS_TOP -> Color.LIMEGREEN;
+            case GRASS_LEFT, GRASS_RIGHT, GRASS_BOTTOM -> Color.LIMEGREEN;
             case DIRT      -> Color.SIENNA;
             case STONE     -> Color.DARKGRAY;
             default        -> Color.TRANSPARENT;
@@ -125,6 +137,15 @@ public class World {
 
     private boolean isTopEmpty(int x, int y) {
         return !isSolid(x, y-1);
+    }
+    /** 4-битная маска NESW: 1=N (сверху), 2=E, 4=S, 8=W */
+    private int neighbourMask(int x, int y) {
+        int m = 0;
+        if ( !isSolid(x, y-1) ) m |= 1;   // North
+        if ( !isSolid(x+1, y) ) m |= 2;   // East
+        if ( !isSolid(x, y+1) ) m |= 4;   // South
+        if ( !isSolid(x-1, y) ) m |= 8;   // West
+        return m;
     }
 
     public boolean isSolid(int x, int y) {

@@ -112,7 +112,11 @@ public class GameEngine {
             }
         };
 
-        add.accept(TileType.GRASS_TOP,   "/tiles/grass_top.png");
+        add.accept(TileType.GRASS_TOP,    "/tiles/grass_top.png");
+        add.accept(TileType.GRASS_LEFT,   "/tiles/grass_left.png");
+        add.accept(TileType.GRASS_RIGHT,  "/tiles/grass_right.png");
+        add.accept(TileType.GRASS_BOTTOM, "/tiles/grass_bottom.png");
+        add.accept(TileType.DIRT,         "/tiles/dirt.png");
         add.accept(TileType.DIRT,        "/tiles/dirt.png");
         add.accept(TileType.STONE,       "/tiles/stone.png");
         add.accept(TileType.TREE_TRUNK,  "/tiles/trunk.png");

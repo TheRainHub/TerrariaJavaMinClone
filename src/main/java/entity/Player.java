@@ -68,7 +68,7 @@ public class Player {
         int top    = (int) (py                   / TileConstants.TILE_SIZE);
         int bottom = (int) ((py + PLAYER_HEIGHT - 1) / TileConstants.TILE_SIZE);
 
-        return world.isSolid(left,  top   ) ||
+        return world.isSolid(left,top   ) ||
                 world.isSolid(right, top   ) ||
                 world.isSolid(left,  bottom) ||
                 world.isSolid(right, bottom);

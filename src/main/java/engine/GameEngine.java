@@ -1,7 +1,6 @@
 package engine;
 
-import world.TileType;
-import world.World;
+import world.*;
 import entity.Player;
 import javafx.animation.AnimationTimer;
 import javafx.scene.canvas.GraphicsContext;
@@ -17,10 +16,10 @@ import java.util.Map;
 import util.TileConstants;
 
 public class GameEngine {
-
     private final GraphicsContext gc;
     private final int width, height;
     private final World world;
+    private final WorldRenderer renderer;
     private final Player player;
     private final Camera camera;
 
@@ -34,23 +33,22 @@ public class GameEngine {
         this.gc = gc;
         this.width = width;
         this.height = height;
+        TileRegistry registry = new TileRegistry();
+        TileType[][] tiles   = WorldLoader.loadFromResource("/map.txt", registry);
 
-        loadTextures();
+        this.world    = new World(tiles);
+        this.renderer = new WorldRenderer(registry.getAllTextures());
 
         try { backgroundImage = new Image(getClass().getResourceAsStream("/Forest_background_9.png")); }
         catch (Exception e) { System.err.println("No bg image: "+e.getMessage()); }
 
-        Path lvl = Path.of("src/main/resources/level1.txt");
+        Path lvl = Path.of("src/main/resources/map.txt");
         try {
             if (Files.notExists(lvl))
                 util.TerrainGenerator.generatePerlinLike(lvl.toString(), 200, 60, System.currentTimeMillis());
         } catch (Exception e) { throw new RuntimeException(e); }
 
-        this.world = new World("/level1.txt");
-        this.world.setTextures(tileTextures);
 
-
-        
         int spawnX  = world.getWidth() / 2;
         int spawnY  = world.getSurfaceY(spawnX) - 1;
         this.player = new Player(spawnX * TileConstants.TILE_SIZE, spawnY * TileConstants.TILE_SIZE);
@@ -94,35 +92,9 @@ public class GameEngine {
             gc.fillRect(0,0,width,height);
         }
 
-        world.render(gc, camera);
+        renderer.render(gc, camera, world.getTiles());
         player.render(gc, camera);
     }
-
-    private void loadTextures() {
-        tileTextures = new HashMap<>();
-
-        tileTextures.put(TileType.AIR, null);
-
-        java.util.function.BiConsumer<TileType,String> add = (type,path) -> {
-            var url = getClass().getResource(path);
-            if (url == null) {
-                System.err.println("Texture not found: " + path);
-            } else {
-                tileTextures.put(type, new Image(url.toExternalForm()));
-            }
-        };
-
-        add.accept(TileType.GRASS_TOP,    "/tiles/grass_top.png");
-        add.accept(TileType.GRASS_LEFT,   "/tiles/grass_left.png");
-        add.accept(TileType.GRASS_RIGHT,  "/tiles/grass_right.png");
-        add.accept(TileType.GRASS_BOTTOM, "/tiles/grass_bottom.png");
-        add.accept(TileType.DIRT,         "/tiles/dirt.png");
-        add.accept(TileType.DIRT,        "/tiles/dirt.png");
-        add.accept(TileType.STONE,       "/tiles/stone.png");
-        add.accept(TileType.TREE_TRUNK,  "/tiles/trunk.png");
-        add.accept(TileType.TREE_LEAVES, "/tiles/leaves.png");
-    }
-
 
     public void handleKeyPress(KeyEvent e) {
         switch (e.getCode()) {

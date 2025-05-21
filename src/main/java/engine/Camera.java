@@ -1,6 +1,6 @@
 package engine;
 
-import entity.TileConstants;
+import util.TileConstants;
 
 public class Camera {
     private double worldX, worldY;

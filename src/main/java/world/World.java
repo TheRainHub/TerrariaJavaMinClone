@@ -9,7 +9,7 @@ import javafx.scene.paint.Paint;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-
+import util.TileConstants;
 import static world.TileType.GRASS_TOP;
 
 public class World {
@@ -57,12 +57,11 @@ public class World {
     }
 
     public void render(GraphicsContext gc, Camera camera) {
-        final int tileSize = 16;
 
-        int firstTileX = (int)(camera.getWorldX() / tileSize);
-        int firstTileY = (int)(camera.getWorldY() / tileSize);
-        int visibleTilesX = (int)Math.ceil(camera.viewWidth / (double)tileSize) + 2;
-        int visibleTilesY = (int)Math.ceil(camera.viewHeight / (double)tileSize) + 2;
+        int firstTileX = (int)(camera.getWorldX() / TileConstants.TILE_SIZE);
+        int firstTileY = (int)(camera.getWorldY() / TileConstants.TILE_SIZE);
+        int visibleTilesX = (int)Math.ceil(camera.viewWidth / (double)TileConstants.TILE_SIZE) + 2;
+        int visibleTilesY = (int)Math.ceil(camera.viewHeight / (double)TileConstants.TILE_SIZE) + 2;
 
         for (int tileY = 0; tileY < visibleTilesY; tileY++) {
             for (int tileX = 0; tileX < visibleTilesX; tileX++) {
@@ -80,18 +79,18 @@ public class World {
                 if (tile == TileType.GRASS_TOP && !isTopEmpty) tile = TileType.DIRT;
 
                 // Координаты на экране
-                double screenX = tileX * tileSize - (camera.getWorldX() % tileSize);
-                double screenY = tileY * tileSize - (camera.getWorldY() % tileSize);
+                double screenX = tileX * TileConstants.TILE_SIZE - (camera.getWorldX() % TileConstants.TILE_SIZE);
+                double screenY = tileY * TileConstants.TILE_SIZE - (camera.getWorldY() % TileConstants.TILE_SIZE);
 
 
                 Image texture = (textures != null) ? textures.get(tile) : null;
 
                 if (texture != null) {
-                    gc.drawImage(texture, screenX, screenY, tileSize, tileSize);
+                    gc.drawImage(texture, screenX, screenY, TileConstants.TILE_SIZE, TileConstants.TILE_SIZE);
                 } else {
                     gc.setFill(getTileColor(tile));
                     if (tile != TileType.AIR) {
-                        gc.fillRect(screenX, screenY, tileSize, tileSize);
+                        gc.fillRect(screenX, screenY, TileConstants.TILE_SIZE, TileConstants.TILE_SIZE);
                     }
                 }
             }

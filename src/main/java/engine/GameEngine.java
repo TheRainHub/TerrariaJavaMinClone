@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
+import util.TileConstants;
 
 public class GameEngine {
 
@@ -49,10 +50,10 @@ public class GameEngine {
         this.world.setTextures(tileTextures);
 
 
-        int tileSize = 16;
+        
         int spawnX  = world.getWidth() / 2;
         int spawnY  = world.getSurfaceY(spawnX) - 1;
-        this.player = new Player(spawnX * tileSize, spawnY * tileSize);
+        this.player = new Player(spawnX * TileConstants.TILE_SIZE, spawnY * TileConstants.TILE_SIZE);
 
         /* 4. камера и цикл ----------------------------- */
         this.camera = new Camera(0, 0, width, height);

@@ -2,14 +2,15 @@ package entity;
 
 import world.World;
 import engine.Camera;
+import util.TileConstants;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
+
 
 public class Player {
 
     private static final int PLAYER_WIDTH  = 16;
     private static final int PLAYER_HEIGHT = 34;
-    public static final int TILE_SIZE     = 16;
 
     private static final double SPEED       = 150;
     private static final double JUMP_POWER  = -350;
@@ -62,10 +63,10 @@ public class Player {
     }
 
     private boolean checkCollision(double px, double py, World world) {
-        int left   = (int) (px                   / TILE_SIZE);
-        int right  = (int) ((px + PLAYER_WIDTH  - 1) / TILE_SIZE);
-        int top    = (int) (py                   / TILE_SIZE);
-        int bottom = (int) ((py + PLAYER_HEIGHT - 1) / TILE_SIZE);
+        int left   = (int) (px                   / TileConstants.TILE_SIZE);
+        int right  = (int) ((px + PLAYER_WIDTH  - 1) / TileConstants.TILE_SIZE);
+        int top    = (int) (py                   / TileConstants.TILE_SIZE);
+        int bottom = (int) ((py + PLAYER_HEIGHT - 1) / TileConstants.TILE_SIZE);
 
         return world.isSolid(left,  top   ) ||
                 world.isSolid(right, top   ) ||

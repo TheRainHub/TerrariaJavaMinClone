@@ -10,4 +10,6 @@ module org.example.game {
     opens entity to javafx.fxml;
     exports world;
     opens world to javafx.fxml;
+    exports util;
+    opens util to javafx.fxml;
 }

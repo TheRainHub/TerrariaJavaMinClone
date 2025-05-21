@@ -21,6 +21,13 @@ public class Camera {
         if (worldY < 0) worldY = 0;
 
     }
+    public int getViewWidth() {
+        return viewWidth;
+    }
+
+    public int getViewHeight() {
+        return viewHeight;
+    }
 
     public double getWorldX() { return worldX; }
     public double getWorldY() { return worldY; }

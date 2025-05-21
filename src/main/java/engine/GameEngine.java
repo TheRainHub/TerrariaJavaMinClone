@@ -10,139 +10,137 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 
-import static world.TileType.AIR;
-import static world.TileType.DIRT;
+import java.nio.file.Path;
+import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.Map;
 
 public class GameEngine {
+
     private final GraphicsContext gc;
-    private final int width;
-    private final int height;
+    private final int width, height;
     private final World world;
     private final Player player;
     private final Camera camera;
-    private AnimationTimer gameLoop;
-    private boolean isRunning = false;
 
+    private Map<TileType, Image> tileTextures;
     private Image backgroundImage;
+    private AnimationTimer loop;
+    private boolean running = false;
+
 
     public GameEngine(GraphicsContext gc, int width, int height) {
         this.gc = gc;
         this.width = width;
         this.height = height;
 
+        loadTextures();
+
+        try { backgroundImage = new Image(getClass().getResourceAsStream("/Forest_background_9.png")); }
+        catch (Exception e) { System.err.println("No bg image: "+e.getMessage()); }
+
+        Path lvl = Path.of("src/main/resources/level1.txt");
         try {
-            backgroundImage = new Image(getClass().getResourceAsStream("/Forest_background_9.png"));
-        } catch (Exception e) {
-            System.err.println("Image not found: " + e.getMessage());
-        }
+            if (Files.notExists(lvl))
+                util.TerrainGenerator.generatePerlinLike(lvl.toString(), 200, 60, System.currentTimeMillis());
+        } catch (Exception e) { throw new RuntimeException(e); }
 
         this.world = new World("/level1.txt");
-        int spawnTileX = world.getWidth() / 2;
-        int spawnTileY = world.getSurfaceY(spawnTileX) - 1;
-        int tileSize   = 16;
+        this.world.setTextures(tileTextures);
 
-        this.player = new Player(spawnTileX * tileSize,
-                spawnTileY * tileSize);
+
+        int tileSize = 16;
+        int spawnX  = world.getWidth() / 2;
+        int spawnY  = world.getSurfaceY(spawnX) - 1;
+        this.player = new Player(spawnX * tileSize, spawnY * tileSize);
+
+        /* 4. камера и цикл ----------------------------- */
         this.camera = new Camera(0, 0, width, height);
 
-        gameLoop = new AnimationTimer() {
-            private long lastUpdate = 0;
-
-            @Override
-            public void handle(long now) {
-                if (lastUpdate == 0) {
-                    lastUpdate = now;
-                    return;
-                }
-                double deltaTime = (now - lastUpdate) / 1_000_000_000.0;
-                lastUpdate = now;
-                update(deltaTime);
+        loop = new AnimationTimer() {
+            private long last = 0;
+            @Override public void handle(long now) {
+                if (last == 0) { last = now; return; }
+                double dt = (now - last) / 1_000_000_000.0;
+                last = now;
+                update(dt);
                 render();
             }
         };
     }
 
-    public void start() {
-        if (!isRunning) {
-            gameLoop.start();
-            isRunning = true;
-        }
-    }
+    /* === системные методы === */
+    public void start() { if (!running) { loop.start(); running = true; } }
+    public void stop()  { if (running)  { loop.stop();  running = false; } }
 
-    public void stop() {
-        if (isRunning) {
-            gameLoop.stop();
-            isRunning = false;
-        }
-    }
-
-    private void update(double deltaTime) {
-        player.update(deltaTime, world);
+    /* === логика === */
+    private void update(double dt) {
+        player.update(dt, world);
         camera.centerOn(player.getX(), player.getY());
     }
 
     private void render() {
-        gc.clearRect(0, 0, width, height);
+        gc.clearRect(0,0,width,height);
 
         if (backgroundImage != null) {
-            double parallaxFactor = 0.01;
-            double bgX = -camera.getWorldX() * parallaxFactor;
-            double bgY = -camera.getWorldY() * parallaxFactor;
-            gc.drawImage(backgroundImage, bgX, bgY, width, height);
+            double parallax = 0.01;
+            gc.drawImage(backgroundImage,
+                    -camera.getWorldX()*parallax,
+                    -camera.getWorldY()*parallax,
+                    width, height);
         } else {
-            gc.setFill(Color.SKYBLUE);
-            gc.fillRect(0, 0, width, height);
+            gc.setFill(Color.CORNFLOWERBLUE);
+            gc.fillRect(0,0,width,height);
         }
 
         world.render(gc, camera);
         player.render(gc, camera);
-
-        renderUI();
     }
 
-    private void renderUI() {
+    private void loadTextures() {
+        tileTextures = new HashMap<>();
 
+        tileTextures.put(TileType.AIR, null);
+
+        java.util.function.BiConsumer<TileType,String> add = (type,path) -> {
+            var url = getClass().getResource(path);
+            if (url == null) {
+                System.err.println("Texture not found: " + path);
+            } else {
+                tileTextures.put(type, new Image(url.toExternalForm()));
+            }
+        };
+
+        add.accept(TileType.GRASS_TOP,   "/tiles/grass_top.png");
+        add.accept(TileType.DIRT,        "/tiles/dirt.png");
+        add.accept(TileType.STONE,       "/tiles/stone.png");
+        add.accept(TileType.TREE_TRUNK,  "/tiles/trunk.png");
+        add.accept(TileType.TREE_LEAVES, "/tiles/leaves.png");
     }
 
-    public void handleKeyPress(KeyEvent event) {
-        switch (event.getCode()) {
-            case W:
-            case SPACE:
-                player.jump();
-                break;
-            case A:
-            case LEFT:
-                player.moveLeft();
-                break;
-            case D:
-            case RIGHT:
-                player.moveRight();
-                break;
+
+    public void handleKeyPress(KeyEvent e) {
+        switch (e.getCode()) {
+            case A, LEFT  -> player.moveLeft();
+            case D, RIGHT -> player.moveRight();
+            case W, SPACE, UP -> player.jump();
         }
     }
-    public void handleKeyRelease(KeyEvent event) {
-        switch (event.getCode()) {
-            case A:
-            case LEFT:
-                player.stopMovingLeft();
-                break;
-            case D:
-            case RIGHT:
-                player.stopMovingRight();
-                break;
+    public void handleKeyRelease(KeyEvent e) {
+        switch (e.getCode()) {
+            case A, LEFT  -> player.stopMovingLeft();
+            case D, RIGHT -> player.stopMovingRight();
         }
     }
 
-    public void handleMousePress(MouseEvent event) {
-        int worldX = camera.screenToWorldX(event.getX());
-        int worldY = camera.screenToWorldY(event.getY());
+    public void handleMousePress(MouseEvent e) {
+        int tx = (int) ((camera.getWorldX() + e.getX()) / 16);
+        int ty = (int) ((camera.getWorldY() + e.getY()) / 16);
 
-        if (event.isPrimaryButtonDown()) {
-            world.mineTile(worldX, worldY);
-        } else if (event.isSecondaryButtonDown()) {
-            world.placeTile(worldX, worldY, DIRT);
-        }
+        if (e.isPrimaryButtonDown())     world.mineTile(tx, ty);
+        else if (e.isSecondaryButtonDown()) world.placeTile(tx, ty, TileType.DIRT);
     }
-    public void handleMouseRelease(MouseEvent event) {}
-    public void handleMouseMove(MouseEvent event) {}
+
+    public void handleMouseRelease(MouseEvent e) { }
+    public void handleMouseMove(MouseEvent e)    { }
 }

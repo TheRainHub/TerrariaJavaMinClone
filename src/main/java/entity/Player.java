@@ -8,8 +8,8 @@ import javafx.scene.paint.Color;
 public class Player {
 
     private static final int PLAYER_WIDTH  = 16;
-    private static final int PLAYER_HEIGHT = 38;
-    private static final int TILE_SIZE     = 32;
+    private static final int PLAYER_HEIGHT = 34;
+    public static final int TILE_SIZE     = 16;
 
     private static final double SPEED       = 150;
     private static final double JUMP_POWER  = -350;

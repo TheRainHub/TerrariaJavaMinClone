@@ -1,2 +1,2 @@
-banana=15
-branch = 3
+banana=21
+stick=3

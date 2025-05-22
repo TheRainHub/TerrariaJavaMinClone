@@ -166,8 +166,12 @@ public class TerrainGenerator {
                 int by = surface[bx] - 1;
                 pw.printf("ITEM %s %d %d%n", "banana", bx, by);
             }
+            int centerX = w / 2;
+            int centerY = surface[centerX] - 1;
+            pw.printf("NPC %s %d %d%n", "bro", centerX, centerY);
         }
     }
+
 
     /**
      * A simple CLI entry point for quick testing.
@@ -175,6 +179,6 @@ public class TerrainGenerator {
      * and writes it to "src/main/resources/map3.txt".
      */
     public static void main(String[] args) throws IOException {
-        generatePerlinLike("src/main/resources/map3.txt", 100, 50, System.currentTimeMillis());
+        generatePerlinLike("src/main/resources/map1.txt", 100, 100, System.currentTimeMillis());
     }
 }

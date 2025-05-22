@@ -1,6 +1,7 @@
 package engine;
 
 import entity.ItemEntity;
+import entity.NPC;
 import entity.Player;
 import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
@@ -12,8 +13,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import util.Inventory;
-import util.TileConstants;
+import util.*;
 import world.*;
 
 import java.io.FileInputStream;
@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
+import util.Recipe;
+import util.RecipeLoader;
 
 import static entity.Player.PLAYER_WIDTH;
 
@@ -81,6 +83,14 @@ public class GameEngine {
     /** File where current level & player position are saved. */
     private static final String SAVEGAME_FILE  = "savegame.txt";
 
+    private final List<NPC> npcs = new ArrayList<>();
+
+    // --- для крафта ---
+    private final List<Recipe> recipes = RecipeLoader.loadRecipes("/recipes.txt");
+    private boolean craftingOpen = false;
+    private int craftIndex = 0;
+
+
     /**
      * Constructs the engine, loads inventory (if any), sets up player, camera,
      * background, animation loop, and either restores a saved game or loads level 0.
@@ -103,9 +113,7 @@ public class GameEngine {
 
         // 2) Initialize player (position set later by loadLevel or loadGameState)
         player = new Player(0,0);
-
-        // 3) Initialize camera at (0,0)
-        camera = new Camera(0,0, width, height);
+        camera = new Camera(0, 0, width, height);
 
         // 4) Load background image for parallax (optional)
         try {
@@ -132,6 +140,19 @@ public class GameEngine {
         if (!loadGameState()) {
             loadLevel(0);
         }
+
+        int tileSize = TileConstants.TILE_SIZE;
+        int spawnTileX = world.getWidth() / 2;
+        int spawnTileY = world.getSurfaceY(spawnTileX) - 1;
+        double npcX = spawnTileX * tileSize;
+        double npcY = spawnTileY * tileSize;
+        String[] broDialog = {
+                "Hello Bro!",
+                "To become monkey king, you should have a lot of bananas!",
+                "You can find a lot of bananas in level 2 and 3.",
+                "Just go to the right and when you find 20, you will win."
+        };
+        npcs.add(new NPC(npcX, npcY, broDialog));
     }
 
     /**
@@ -189,7 +210,7 @@ public class GameEngine {
      * @param dt time elapsed since last frame in seconds
      */
     private void update(double dt) {
-        if (paused) return;
+        if (paused || craftingOpen) return;
         // 1) Physics & movement
         player.update(dt, world);
         camera.centerOn(player.getX(), player.getY());
@@ -200,6 +221,10 @@ public class GameEngine {
             if (it.next().update(player, world)) {
                 it.remove();
             }
+        }
+
+        for (NPC npc : npcs) {
+            npc.update(dt, world);
         }
 
         // 3) Level transitions when player crosses left/right bounds
@@ -222,6 +247,7 @@ public class GameEngine {
      * Renders the background, world, items, and player.
      */
     private void render() {
+        gc.setGlobalAlpha(1.0);
         gc.clearRect(0, 0, width, height);
 
         // draw background (parallax)
@@ -238,14 +264,43 @@ public class GameEngine {
             gc.fillRect(0, 0, width, height);
         }
 
+        for (NPC npc : npcs) {
+            npc.render(gc, camera);
+        }
+
         // draw tiles, items, player
         renderer.render(gc, camera, world.getTiles());
         items.forEach(i -> i.render(gc, camera));
         player.render(gc, camera);
-
+        // если какой-то NPC в диалоге — рисуем оверлей
+        for (NPC npc : npcs) {
+            if (npc.isInDialog()) {
+                drawDialogBox(gc, npc.currentDialogLine());
+                break;  // рисуем только первое активное окно
+            }
+        }
         if (paused) {
             renderPauseOverlay();
         }
+    }
+
+    private void drawDialogBox(GraphicsContext gc, String text) {
+        double boxW = width * 0.8;
+        double boxH = 80;
+        double boxX = (width - boxW) / 2;
+        double boxY = height - boxH - 20;
+
+        gc.setGlobalAlpha(0.75);
+        gc.setFill(Color.BLACK);
+        gc.fillRoundRect(boxX, boxY, boxW, boxH, 10, 10);
+        gc.setGlobalAlpha(1.0);
+
+        gc.setStroke(Color.WHITE);
+        gc.strokeRoundRect(boxX, boxY, boxW, boxH, 10, 10);
+
+        gc.setFill(Color.WHITE);
+        gc.setFont(Font.font("Consolas", FontWeight.NORMAL, 16));
+        gc.fillText(text, boxX + 20, boxY + 30);
     }
 
     private void renderPauseOverlay() {
@@ -284,12 +339,40 @@ public class GameEngine {
      * Renders the UI (inventory text).
      */
     private void renderUI() {
+        // 1) инвентарь
         gc.setFill(Color.WHITE);
         gc.setFont(Font.font("Consolas", FontWeight.NORMAL, 14));
-        int y = 20;
+        int y0 = 20;
         for (var e : inventory.getItems().entrySet()) {
-            gc.fillText(e.getKey() + " x" + e.getValue(), 10, y);
-            y += 20;
+            gc.fillText(e.getKey() + " x" + e.getValue(), 10, y0);
+            y0 += 20;
+        }
+
+        // 2) окно крафта поверх
+        if (craftingOpen) {
+            double bx = 10, by = 100, bw = 250, bh = recipes.size() * 22 + 20;
+            gc.setFill(Color.rgb(30, 30, 30, 0.8));
+            gc.fillRoundRect(bx, by, bw, bh, 8, 8);
+            gc.setStroke(Color.WHITE);
+            gc.strokeRoundRect(bx, by, bw, bh, 8, 8);
+
+            gc.setFont(Font.font("Consolas", 14));
+            for (int i = 0; i < recipes.size(); i++) {
+                Recipe r = recipes.get(i);
+                double ty = by + 20 + i * 22;
+                gc.setFill(i == craftIndex ? Color.YELLOW : Color.WHITE);
+                gc.fillText(r.output(), bx + 10, ty);
+            }
+
+            // показать ингредиенты выбранного рецепта
+            Recipe cur = recipes.get(craftIndex);
+            gc.setFill(Color.LIGHTGRAY);
+            gc.fillText("Need:", bx + bw + 10, by + 20);
+            int yy = (int)(by + 40);
+            for (var ingr : cur.ingredients().entrySet()) {
+                gc.fillText(ingr.getKey() + " x" + ingr.getValue(), bx + bw + 10, yy);
+                yy += 20;
+            }
         }
     }
 
@@ -302,29 +385,49 @@ public class GameEngine {
     private void loadLevel(int levelIndex) {
         currentLevel = levelIndex;
 
-        // a) Parse level definition
+        // a) читаем уровень и создаём world+renderer
         TileRegistry registry = new TileRegistry();
         Level lvl = WorldLoader.loadLevel(levelFiles.get(levelIndex), registry);
-
-        // b) Create world and renderer
         world    = new World(lvl.getTiles());
         renderer = new WorldRenderer(registry.getAllTextures());
 
-        // c) Spawn items
+        // b) спавним предметы
         items.clear();
         for (var spawn : lvl.getItemSpawns()) {
             double px = spawn.tileX * TileConstants.TILE_SIZE;
             double py = spawn.tileY * TileConstants.TILE_SIZE;
-            items.add(new ItemEntity(spawn.type, inventory, px, py));
+            items.add(new ItemEntity(spawn.itemType, inventory, px, py));
         }
 
-        // d) Place player at center surface
+        // c) спавним NPC
+        npcs.clear();
+        for (var spawn : lvl.getNpcSpawns()) {
+            double px = spawn.tileX * TileConstants.TILE_SIZE;
+            double py = spawn.tileY * TileConstants.TILE_SIZE;
+
+            String[] dialog;
+            if (spawn.npcId.equals("bro")) {
+                dialog = new String[]{
+                        "Hello Bro!",
+                        "To become monkey king, you should have a lot of bananas!",
+                        "You can find a lot of bananas in level 2 and 3.",
+                        "Just go to the right and when you find 20, you will win."
+                };
+            } else {
+                dialog = new String[]{ "...(unknown NPC)..." };
+            }
+
+            npcs.add(new NPC(px, py, dialog));
+        }
+
+        // d) позиционируем игрока на поверхности
         int sx = world.getWidth() / 2;
         int sy = world.getSurfaceY(sx) - 1;
         player.setPosition(
                 sx * TileConstants.TILE_SIZE,
                 sy * TileConstants.TILE_SIZE
         );
+
     }
 
     /**
@@ -380,9 +483,52 @@ public class GameEngine {
      */
     public void handleKeyPress(KeyEvent e) {
         switch (e.getCode()) {
-            case A, LEFT      -> player.moveLeft();
-            case D, RIGHT     -> player.moveRight();
-            case W, SPACE, UP -> player.jump();
+            // --- меню крафта активируется на C ---
+            case C -> {
+                craftingOpen = !craftingOpen;
+                return;
+            }
+            // если меню крафта открыто — обрабатываем навигацию в нём
+            default -> {
+                if (craftingOpen) {
+                    switch (e.getCode()) {
+                        case UP, W    -> craftIndex = (craftIndex + recipes.size() - 1) % recipes.size();
+                        case DOWN, S  -> craftIndex = (craftIndex + 1) % recipes.size();
+                        case ENTER -> {
+                            Recipe r = recipes.get(craftIndex);
+                            if (CraftingManager.canCraft(r, inventory)) {
+                                CraftingManager.craft(r, inventory);
+                            }
+                        }
+                        case C -> craftingOpen = false;
+                        default -> {}
+                    }
+                    return;
+                }
+            }
+        }
+
+        switch (e.getCode()) {
+            case E:
+                double px = player.getX() + Player.PLAYER_WIDTH / 2.0;
+                double py = player.getY() + Player.PLAYER_HEIGHT / 2.0;
+                for (NPC npc : npcs) {
+                    npc.interact(px, py);
+                }
+                break;
+            case A:
+            case LEFT:
+                player.moveLeft();
+                break;
+            case D:
+            case RIGHT:
+                player.moveRight();
+                break;
+            case W:
+            case SPACE:
+            case UP:
+                player.jump();
+                break;
         }
     }
 

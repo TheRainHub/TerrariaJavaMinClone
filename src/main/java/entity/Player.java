@@ -8,8 +8,8 @@ import javafx.scene.image.Image;
 
 public class Player {
 
-    private static final int PLAYER_WIDTH  = 34;
-    private static final int PLAYER_HEIGHT = 42;
+    public static final int PLAYER_WIDTH  = 34;
+    public static final int PLAYER_HEIGHT = 42;
 
     private static final double SPEED       = 150;
     private static final double JUMP_POWER  = -500;

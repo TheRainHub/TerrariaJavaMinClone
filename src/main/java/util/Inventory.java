@@ -4,13 +4,11 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 
-/**
- * Простая модель инвентаря: Map<itemId, amount>.
- */
 public class Inventory {
     private final Map<String,Integer> items = new LinkedHashMap<>();
 
-    /**
+
+/**
      * Загружает инвентарь из текстового файла формата key=value.
      */
     public void loadFromFile(String filename) throws IOException {

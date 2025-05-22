@@ -8,6 +8,7 @@ public enum TileType {
     GRASS_LEFT(true, true, "grass_left"),
     GRASS_RIGHT(true, true, "grass_right"),
     GRASS_BOTTOM(true, true, "grass_bottom"),
+    TREE_MAIN(false,true, "tree_main"),
     TREE_TRUNK(false, true, "trunk"),
     TREE_LEAVES(false, true, "leaves");
 

@@ -16,8 +16,9 @@ public class TileRegistry {
         register('B', TileType.GRASS_BOTTOM);
         register('D', TileType.DIRT);
         register('S', TileType.STONE);
-        register('T', TileType.TREE_TRUNK);
-        register('E', TileType.TREE_LEAVES);
+        register('M',  TileType.TREE_MAIN);
+        register('T',  TileType.TREE_TRUNK);
+        register('E',  TileType.TREE_LEAVES);
         loadTextures();
     }
 

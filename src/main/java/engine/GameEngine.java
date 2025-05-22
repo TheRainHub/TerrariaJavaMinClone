@@ -13,6 +13,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 import util.*;
 import world.*;
 
@@ -90,6 +91,7 @@ public class GameEngine {
     private boolean craftingOpen = false;
     private int craftIndex = 0;
 
+    private boolean gameWon = false;
 
     /**
      * Constructs the engine, loads inventory (if any), sets up player, camera,
@@ -210,6 +212,7 @@ public class GameEngine {
      * @param dt time elapsed since last frame in seconds
      */
     private void update(double dt) {
+        if (gameWon) return;
         if (paused || craftingOpen) return;
         // 1) Physics & movement
         player.update(dt, world);
@@ -247,6 +250,30 @@ public class GameEngine {
      * Renders the background, world, items, and player.
      */
     private void render() {
+        if (gameWon) {
+            gc.setGlobalAlpha(1.0);
+            // полупрозрачный фон
+            gc.setFill(Color.rgb(0, 0, 0, 0.75));
+            gc.fillRect(0, 0, width, height);
+
+            // крупный золотой текст
+            String msg = "YOU WIN!";
+            Font winFont = Font.font("Consolas", FontWeight.BOLD, 72);
+            gc.setFont(winFont);
+            gc.setFill(Color.GOLD);
+
+            Text helper = new Text(msg);
+            helper.setFont(winFont);
+            double textWidth = helper.getLayoutBounds().getWidth();
+
+            double x = (width - textWidth) / 2;
+            double y = height / 2;
+            gc.fillText(msg, x, y);
+
+            return;
+
+        }
+
         gc.setGlobalAlpha(1.0);
         gc.clearRect(0, 0, width, height);
 
@@ -495,9 +522,12 @@ public class GameEngine {
                         case UP, W    -> craftIndex = (craftIndex + recipes.size() - 1) % recipes.size();
                         case DOWN, S  -> craftIndex = (craftIndex + 1) % recipes.size();
                         case ENTER -> {
-                            Recipe r = recipes.get(craftIndex);
-                            if (CraftingManager.canCraft(r, inventory)) {
-                                CraftingManager.craft(r, inventory);
+                            var rec = recipes.get(craftIndex);
+                            if (CraftingManager.canCraft(rec, inventory)) {
+                                CraftingManager.craft(rec, inventory);
+                                if (rec.output().equalsIgnoreCase("crown")) {
+                                    gameWon = true;
+                                }
                             }
                         }
                         case C -> craftingOpen = false;
@@ -509,6 +539,12 @@ public class GameEngine {
         }
 
         switch (e.getCode()) {
+            case DIGIT1:
+                if (inventory.getItems().getOrDefault("baton", 0) > 0) {
+                    player.setEquippedItem(ItemType.BATON);
+                }
+                break;
+
             case E:
                 double px = player.getX() + Player.PLAYER_WIDTH / 2.0;
                 double py = player.getY() + Player.PLAYER_HEIGHT / 2.0;

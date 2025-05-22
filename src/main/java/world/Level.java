@@ -15,13 +15,21 @@ public class Level {
         this.npcSpawns  = npcSpawns;
     }
 
-    public TileType[][] getTiles()             { return tiles; }
-    public List<ItemSpawn> getItemSpawns()     { return itemSpawns; }
-    public List<NPCSpawn>  getNpcSpawns()      { return npcSpawns; }  // ← новый геттер
+    public TileType[][] getTiles(){
+        return tiles;
+    }
+
+    public List<ItemSpawn> getItemSpawns(){
+        return itemSpawns;
+    }
+
+    public List<NPCSpawn> getNpcSpawns(){
+        return npcSpawns;
+    }
 
     /** Спавн предмета */
     public static class ItemSpawn {
-        public final ItemType itemType;  // вместо String теперь ItemType
+        public final ItemType itemType;
         public final int      tileX, tileY;
 
         public ItemSpawn(ItemType itemType, int tileX, int tileY) {
@@ -31,7 +39,6 @@ public class Level {
         }
     }
 
-    /** Спавн NPC */
     public static class NPCSpawn {
         public final String npcId;
         public final int    tileX, tileY;

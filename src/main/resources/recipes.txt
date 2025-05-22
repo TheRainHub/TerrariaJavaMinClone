@@ -1,3 +1,4 @@
 baton=stick:3
 sword=iron:3,stick:1
 arrow=stick:1,stone:1
+crown=banana:20

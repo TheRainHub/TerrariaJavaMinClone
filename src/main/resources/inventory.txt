@@ -1,3 +1,1 @@
-banana=5
-bow=1
-arrow=20
+banana=4

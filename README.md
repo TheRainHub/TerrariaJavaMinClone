@@ -58,7 +58,6 @@ These steps will get you up and running quickly:
 * **Left Click**: Mine a block
 * **Right Click**: Place a dirt block
 * **ESC**: Open pause menu
-* **P**: Pause / unpause
 
 ### Mechanics
 

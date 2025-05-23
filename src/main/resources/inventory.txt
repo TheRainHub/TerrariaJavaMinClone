@@ -1,2 +1,1 @@
-banana=21
-stick=3
+banana=3

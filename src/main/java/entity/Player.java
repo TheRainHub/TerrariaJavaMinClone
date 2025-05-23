@@ -29,8 +29,8 @@ public class Player {
     private final Image[] idleRightFrames  = new Image[4];
     private final Image[] runLeftFrames    = new Image[4];
     private final Image[] runRightFrames   = new Image[4];
-    private final Image[] jumpLeftFrames   = new Image[5];
-    private final Image[] jumpRightFrames  = new Image[5];
+    private final Image[] jumpLeftFrames   = new Image[3];
+    private final Image[] jumpRightFrames  = new Image[3];
 
     // baton-in-hand idle animations
     private final Image[] idleLeftBaton    = new Image[4];
@@ -65,7 +65,7 @@ public class Player {
             idleLeftBaton[i]    = load("/animation/JonkleStandLeftWithBaton"  + n + ".png");
             idleRightBaton[i]   = load("/animation/JonkleStandRightWithBaton" + n + ".png");
         }
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 3; i++) {
             String n = String.valueOf(i + 1);
             jumpLeftFrames[i]   = load("/animation/JonkleJumpLeft"          + n + ".png");
             jumpRightFrames[i]  = load("/animation/JonkleJumpRight"         + n + ".png");
@@ -103,11 +103,17 @@ public class Player {
     }
 
     public void update(double dt, World world) {
+        boolean prevOnGround = this.onGround;
         // horizontal movement
         if      (movingLeft)  vx = -SPEED;
         else if (movingRight) vx =  SPEED;
         else                  vx =  0;
 
+        boolean justStartedJump = !onGround && prevOnGround;
+        if (justStartedJump) {
+            frameIndex = 0;
+            frameTimer = 0;
+        }
         // apply gravity
         vy += GRAVITY * dt;
         vy = Math.max(-MAX_FALL, Math.min(MAX_FALL, vy));
@@ -126,23 +132,40 @@ public class Player {
             vy = 0;
         }
 
-        // animation timing
-        frameTimer += dt;
+        boolean justLanded      =  onGround && !prevOnGround;
+
+        // сброс анимации прыжка в момент отрыва
+        if (justStartedJump) {
+            frameIndex = 0;
+            frameTimer = 0;
+        }
+        // посадочный кадр (можете выбрать любой индекс, например последний из jumpFrames)
+        else if (justLanded) {
+            frameIndex = jumpLeftFrames.length - 1;
+            frameTimer = 0;
+        }
+
+        // --- 7) Переключение кадров по состоянию
         if (!onGround) {
-            // jump animation
-            if (frameIndex < jumpLeftFrames.length - 1
-                    && frameTimer >= JUMP_FRAME_DURATION) {
+            // прыжок — продвигаем по jumpFrames
+            frameTimer += dt;
+            if (frameTimer >= JUMP_FRAME_DURATION) {
                 frameTimer -= JUMP_FRAME_DURATION;
-                frameIndex++;
+                // не выходим за предел массива
+                frameIndex = Math.min(frameIndex + 1, jumpLeftFrames.length - 1);
             }
-        } else if (movingLeft || movingRight) {
-            // running animation
+        }
+        else if (movingLeft || movingRight) {
+            // бег
+            frameTimer += dt;
             if (frameTimer >= FRAME_DURATION) {
                 frameTimer -= FRAME_DURATION;
                 frameIndex = (frameIndex + 1) % runLeftFrames.length;
             }
-        } else {
-            // idle or baton idle
+        }
+        else {
+            // стоим (с жезлом или без)
+            frameTimer += dt;
             int len = hasBaton ? idleLeftBaton.length : idleLeftFrames.length;
             if (frameTimer >= FRAME_DURATION) {
                 frameTimer -= FRAME_DURATION;

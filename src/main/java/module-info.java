@@ -12,4 +12,6 @@ module org.example.game {
     opens world to javafx.fxml;
     exports util;
     opens util to javafx.fxml;
+    exports engine.input;
+    opens engine.input to javafx.fxml;
 }

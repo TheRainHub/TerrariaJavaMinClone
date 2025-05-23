@@ -1,88 +1,94 @@
 package main;
 
-import engine.GameEngine;
+import engine.core.GameLoop;
+import engine.input.InputHandler;
+import engine.level.LevelManager;
+import engine.save.SaveLoadManager;
+import engine.ui.UIManager;
+import entity.Player;
+import entity.NPC;
+import entity.ItemEntity;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.input.KeyCode;
+import javafx.scene.image.Image;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+import util.Inventory;
+import util.Recipe;
+import util.RecipeLoader;
+import engine.Camera;
 
-/**
- * Entry point for the 2D game application.
- * <p>
- * Sets up the JavaFX window, canvas, input handlers, and starts the game engine.
- * Supports pausing via ESC and routes input either to the pause menu or the game.
- * </p>
- */
+import java.util.List;
+
 public class GameApp extends Application {
 
-    /** Width of the game canvas in pixels. */
-    public static final int WIDTH = 1720;
-    /** Height of the game canvas in pixels. */
-    public static final int HEIGHT = 820;
+    public static final int WIDTH  = 1720;
+    public static final int HEIGHT =  820;
 
-    /**
-     * Called by JavaFX to initialize and show the primary stage.
-     * <ol>
-     *   <li>Creates a Canvas of fixed size.</li>
-     *   <li>Instantiates the GameEngine with the canvas' GraphicsContext.</li>
-     *   <li>Wraps the canvas in a StackPane and Scene.</li>
-     *   <li>Registers key and mouse event handlers:</li>
-     *     <ul>
-     *       <li>ESC toggles pause/unpause.</li>
-     *       <li>If paused, key events go to a pause-menu handler.</li>
-     *       <li>Otherwise, keys go to game movement/jump.</li>
-     *       <li>Mouse presses/releases/movement go to world interaction.</li>
-     *     </ul>
-     *   <li>Displays the window and starts the game loop.</li>
-     * </ol>
-     *
-     * @param primaryStage the main window provided by JavaFX
-     */
     @Override
     public void start(Stage primaryStage) {
-        // 1) Create drawing surface
+        // 1) Создаём холст и сцену
         Canvas canvas = new Canvas(WIDTH, HEIGHT);
-
-        // 2) Initialize the game engine
-        GameEngine engine = new GameEngine(canvas.getGraphicsContext2D(), WIDTH, HEIGHT);
-
-        // 3) Create scene graph
         StackPane root = new StackPane(canvas);
         Scene scene = new Scene(root);
 
-        // 4) Handle key presses: pause toggle or delegate to engine
-        scene.setOnKeyPressed(e -> {
-            if (e.getCode() == KeyCode.ESCAPE) {
-                engine.togglePause();
-            } else if (engine.isPaused()) {
-                engine.handlePauseMenuInput(e);
-            } else {
-                engine.handleKeyPress(e);
-            }
-        });
+        // 2) Загружаем фон (может быть null)
+        Image bg = null;
+        try {
+            bg = new Image(getClass().getResourceAsStream("/Forest_background_9.png"));
+        } catch (Exception ignored) {}
+        List<String> levelFiles = List.of("/map1.txt", "/map2.txt", "/map3.txt");
+        // 3) Инициализируем основные системы
+        Inventory inventory = new Inventory();
+        Player player       = new Player(0, 0);
+        Camera camera       = new Camera(0, 0, WIDTH, HEIGHT);
 
-        // 5) Handle other input events
-        scene.setOnKeyReleased(engine::handleKeyRelease);
-        scene.setOnMousePressed(engine::handleMousePress);
-        scene.setOnMouseReleased(engine::handleMouseRelease);
-        scene.setOnMouseMoved(engine::handleMouseMove);
+        LevelManager lvlMgr = new LevelManager(
+                player,
+                camera,
+                inventory,    // <— вот он, недостающий аргумент
+                levelFiles
+        );
 
-        // 6) Configure and show the window
+
+        SaveLoadManager saveMgr = new SaveLoadManager(inventory, player, lvlMgr);
+        if (!saveMgr.loadAll()) {
+            lvlMgr.init();
+        }
+
+        List<Recipe> recipes = RecipeLoader.loadRecipes("/recipes.txt");
+        UIManager uiMgr = new UIManager(inventory, recipes, lvlMgr.getNpcs(), saveMgr);
+
+        InputHandler input = new InputHandler(
+                player,
+                lvlMgr,
+                uiMgr,
+                lvlMgr.getNpcs()
+        );
+
+        // 4) Создаём и настраиваем главный цикл
+        GameLoop loop = new GameLoop(
+                canvas.getGraphicsContext2D(), // gc
+                scene,                         // scene
+                WIDTH,                         // width
+                HEIGHT,                        // height
+                lvlMgr,                        // уровень
+                uiMgr,                         // UI-менеджер
+                input,                         // ввод
+                player,                        // игрок
+                bg                             // фон
+        );
+
+        // 5) Конфигурируем и показываем окно
         primaryStage.setTitle("Terraria-Like 2D Game");
         primaryStage.setScene(scene);
         primaryStage.show();
 
-        // 7) Start the game loop
-        engine.start();
+        // 6) Стартуем игровой цикл
+        loop.start();
     }
 
-    /**
-     * Launches the JavaFX application.
-     *
-     * @param args command-line arguments (unused)
-     */
     public static void main(String[] args) {
         launch(args);
     }

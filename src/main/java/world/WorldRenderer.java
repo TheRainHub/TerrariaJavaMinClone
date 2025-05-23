@@ -40,7 +40,7 @@ public class WorldRenderer {
         int m = 0;
         if (y > 0                  && tiles[y-1][x] == TileType.AIR) m |= 1; // North
         if (x < tiles[0].length-1 && tiles[y][x+1] == TileType.AIR) m |= 2; // East
-        if (y < tiles.length-1     && tiles[y+1][x] == TileType.AIR) m |= 4; // South
+//        if (y < tiles.length-1     && tiles[y+1][x] == TileType.AIR) m |= 4; // South
         if (x > 0                  && tiles[y][x-1] == TileType.AIR) m |= 8; // West
         return m;
     }

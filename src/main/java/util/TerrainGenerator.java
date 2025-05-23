@@ -160,7 +160,7 @@ public class TerrainGenerator {
             for (char[] row : map) {
                 pw.println(new String(row));
             }
-            int bananaCount = 2 + rnd.nextInt(2);
+            int bananaCount = 5 + rnd.nextInt(6);
             for (int i = 0; i < bananaCount; i++) {
                 int bx = rnd.nextInt(w);
                 int by = surface[bx] - 1;

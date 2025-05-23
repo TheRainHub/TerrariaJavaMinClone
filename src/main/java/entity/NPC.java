@@ -15,7 +15,7 @@ import world.World;
  */
 public class NPC {
     private static final int FRAME_COUNT = 5;
-    private static final double FRAME_DURATION = 0.2; // seconds per frame
+    private static final double FRAME_DURATION = 0.3; // seconds per frame
     private static final double NPC_SCALE = 3.0;
 
     private final double npcWidth  = TileConstants.TILE_SIZE * NPC_SCALE;

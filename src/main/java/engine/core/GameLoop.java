@@ -185,11 +185,9 @@ public class GameLoop extends AnimationTimer {
         // 2) If the player has won, display a victory screen
         if (gameWon) {
             gc.setGlobalAlpha(1.0);
-            // Semi-transparent dark overlay
             gc.setFill(Color.rgb(0, 0, 0, 0.75));
             gc.fillRect(0, 0, width, height);
 
-            // Large gold victory text
             String msg = "YOU WIN!";
             Font winFont = Font.font("Consolas", FontWeight.BOLD, 72);
             gc.setFont(winFont);
@@ -208,7 +206,7 @@ public class GameLoop extends AnimationTimer {
 
         // 3) Draw background with simple parallax effect if provided
         if (backgroundImage != null) {
-            double parallaxFactor = 0.2;
+            double parallaxFactor = 0.01;
             gc.drawImage(
                     backgroundImage,
                     -lvlMgr.getCamera().getWorldX() * parallaxFactor,

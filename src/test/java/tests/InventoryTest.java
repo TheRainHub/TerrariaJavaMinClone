@@ -3,7 +3,8 @@ package tests;
 
 import org.junit.jupiter.api.Test;
 import util.Inventory;
-
+import org.apiguardian.api.API;
+import static org.apiguardian.api.API.Status.STABLE;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class InventoryTest {

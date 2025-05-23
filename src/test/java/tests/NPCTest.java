@@ -5,7 +5,8 @@ import entity.NPC;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
-
+import org.apiguardian.api.API;
+import static org.apiguardian.api.API.Status.STABLE;
 public class NPCTest {
 
     @Test

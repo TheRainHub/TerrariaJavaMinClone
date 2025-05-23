@@ -1,7 +1,8 @@
 module org.example.game {
     requires javafx.controls;
     requires javafx.fxml;
-
+    requires org.junit.jupiter.api;
+    requires org.apiguardian.api;
     exports main;
 
     opens engine to javafx.fxml;

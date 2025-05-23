@@ -171,7 +171,7 @@ game-project/
 * **Maven** for dependency management and build lifecycle
 * **JUnit 5 (Jupiter)** for unit testing
 * **Apiguardian API** for annotation metadata
-* **GitLab CI/CD** (optional) for automated builds/tests
+
 
 ---
 

@@ -165,7 +165,7 @@ game-project/
 
 ## Technology Stack
 
-* **Java 11+**
+* **Java 17+**
 * **JavaFX** (Canvas, Scene, AnimationTimer)
 * **Maven** for dependency management and build lifecycle
 * **JUnit 5 (Jupiter)** for unit testing

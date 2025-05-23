@@ -192,7 +192,6 @@ Module descriptors are located in `src/main/java/module-info.java` and `src/test
 2. Write clear, commented code and Javadoc in English.
 3. Add or update unit tests in `src/test`.
 4. Submit a merge request with a descriptive title and summary.
-5. Ensure the CI pipeline (if configured) passes all checks.
 
 ---
 

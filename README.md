@@ -46,8 +46,6 @@ These steps will get you up and running quickly:
 
 ---
 
-![alt text](image-1.png)
-
 ## Gameplay Guide
 
 ### Controls
@@ -95,12 +93,7 @@ These steps will get you up and running quickly:
 
 ## Project Structure
 
-
-![alt text](MIWGame.png)
-
-
 ```
-
 game-project/
 ├── pom.xml
 ├── src/
@@ -178,7 +171,7 @@ game-project/
 * **Maven** for dependency management and build lifecycle
 * **JUnit 5 (Jupiter)** for unit testing
 * **Apiguardian API** for annotation metadata
-
+* **GitLab CI/CD** (optional) for automated builds/tests
 
 ---
 
@@ -193,12 +186,72 @@ Module descriptors are located in `src/main/java/module-info.java` and `src/test
 
 ---
 
+
+## Technical Documentation
+
+This section dives into the detailed internals of the application, including data formats, class interactions, and configuration.
+
+### Architecture Overview
+
+The engine follows an MVC-like pattern:
+
+* **Model**: `World`, `Level`, `Inventory`, `Recipe`, and entity state (`Player`, `NPC`, `ItemEntity`).
+* **View**: JavaFX `Canvas` rendering via `WorldRenderer`, `UIManager`, and entity `render()` methods.
+* **Controller**: `GameLoop` orchestrates the update-render cycle; `InputHandler` maps user input to model changes.
+
+Communication flows:
+
+1. **Startup**: `GameApp` loads resources, initializes managers and services.
+2. **Loop**: `GameLoop.handle()` → compute `dt` → `update(dt)` → `render()`.
+3. **Update**: Player physics, NPC behavior, item updates, level transitions in `LevelManager`.
+4. **Render**: Background, tiles, entities, UI overlays via `GraphicsContext`.
+
+### Data Formats
+
+* **Map files (`.txt`)**:
+
+  * First N lines: fixed-width ASCII for `TileType` (characters mapped via `TileRegistry`).
+  * Following lines: spawn directives:
+
+    * `ITEM <itemId> <x> <y>`
+    * `NPC <npcId> <x> <y>`
+* **Recipes (`recipes.txt`)**:
+
+  * Each line: `<output>=<ing1>:<qty1>,<ing2>:<qty2>`
+  * Comments start with `#`.
+* **Inventory (`inventory.txt`)**:
+
+  * Each line: `<itemId>=<quantity>`
+* **Savegame (`savegame.txt`)**:
+
+  * Properties format:
+
+    ```
+    level=<currentLevelIndex>
+    playerX=<xCoordinate>
+    playerY=<yCoordinate>
+    ```
+
+### Class Diagram (Simplified)
+
+```
+GameApp
+  └─ GameLoop ──> InputHandler
+               ├─ LevelManager ──> World, WorldRenderer
+               ├─ UIManager
+               └─ SaveLoadManager
+Player ──> Physics & Animation
+NPC ──> Animation & Dialogue
+Inventory, RecipeLoader, CraftingManager
+```
+
 ## Contributing
 
 1. Fork the repo and create a feature branch.
 2. Write clear, commented code and Javadoc in English.
 3. Add or update unit tests in `src/test`.
 4. Submit a merge request with a descriptive title and summary.
+5. Ensure the CI pipeline (if configured) passes all checks.
 
 ---
 

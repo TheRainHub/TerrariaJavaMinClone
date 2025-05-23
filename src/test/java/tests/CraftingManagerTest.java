@@ -5,8 +5,7 @@ import org.junit.jupiter.api.Test;
 import util.CraftingManager;
 import util.Inventory;
 import util.Recipe;
-import org.apiguardian.api.API;
-import static org.apiguardian.api.API.Status.STABLE;
+
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;

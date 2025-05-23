@@ -12,9 +12,8 @@ import java.nio.file.Path;
 import java.util.Properties;
 
 /**
- * Отвечает за сохранение и загрузку состояния игры:
- * - Инвентарь
- * - Текущий уровень и позиция игрока
+ * Manages saving and loading of game state, including inventory,
+ * level index, and player position.
  */
 public class SaveLoadManager {
     private final Inventory inventory;
@@ -24,6 +23,13 @@ public class SaveLoadManager {
     private static final String INVENTORY_FILE = "src/main/resources/inventory.txt";
     private static final String SAVEGAME_FILE   = "savegame.txt";
 
+    /**
+     * Constructs a SaveLoadManager with required game components.
+     *
+     * @param inventory the player's inventory to save/load
+     * @param player    the player entity whose position is saved/loaded
+     * @param lvlMgr    the level manager for saving/loading level index
+     */
     public SaveLoadManager(Inventory inventory,
                            Player player,
                            LevelManager lvlMgr) {
@@ -32,7 +38,12 @@ public class SaveLoadManager {
         this.lvlMgr    = lvlMgr;
     }
 
-    /** Сохранить только инвентарь. */
+    /**
+     * Saves the player's inventory to disk.
+     * <p>
+     * Errors are logged to stderr on failure.
+     * </p>
+     */
     public void saveInventory() {
         try {
             inventory.saveToFile(INVENTORY_FILE);
@@ -40,17 +51,29 @@ public class SaveLoadManager {
             System.err.println("Cannot save inventory: " + e.getMessage());
         }
     }
+
+    /**
+     * Deletes all save files (inventory and savegame).
+     * <p>
+     * Logs success or failure to standard output or stderr.
+     * </p>
+     */
     public void clearAll() {
         try {
-            Files.deleteIfExists(Path.of("src/main/resources/inventory.txt"));
-            Files.deleteIfExists(Path.of("savegame.txt"));
+            Files.deleteIfExists(Path.of(INVENTORY_FILE));
+            Files.deleteIfExists(Path.of(SAVEGAME_FILE));
             System.out.println("SaveLoadManager: all save files deleted");
         } catch (IOException e) {
             System.err.println("SaveLoadManager: failed to clear saves: " + e.getMessage());
         }
     }
 
-    /** Загрузить только инвентарь. */
+    /**
+     * Loads the player's inventory from disk.
+     * <p>
+     * Errors are logged to stderr on failure.
+     * </p>
+     */
     public void loadInventory() {
         try {
             inventory.loadFromFile(INVENTORY_FILE);
@@ -59,7 +82,14 @@ public class SaveLoadManager {
         }
     }
 
-    /** Сохранить состояние игры: уровень, позицию игрока и инвентарь. */
+    /**
+     * Saves the full game state: inventory, current level, and player position.
+     * <p>
+     * Inventory is saved first, followed by writing level and coordinates
+     * to a properties file.
+     * Errors are logged to stderr on failure.
+     * </p>
+     */
     public void saveAll() {
         saveInventory();
         try (PrintWriter pw = new PrintWriter(SAVEGAME_FILE)) {
@@ -71,13 +101,23 @@ public class SaveLoadManager {
         }
     }
 
-    /** Загрузить состояние игры и установить уровень и позицию игрока. */
+    /**
+     * Loads the full game state: inventory, level, and player position.
+     * <p>
+     * Returns true if the save file existed and was loaded successfully;
+     * false otherwise.
+     * </p>
+     *
+     * @return true if game state loaded successfully, false if no save exists or an error occurred
+     */
     public boolean loadAll() {
-        // inventory инициализируется первым
+        // Load inventory first
         loadInventory();
 
         Path f = Path.of(SAVEGAME_FILE);
-        if (!Files.exists(f)) return false;
+        if (!Files.exists(f)) {
+            return false;
+        }
 
         try (FileInputStream fis = new FileInputStream(SAVEGAME_FILE)) {
             Properties props = new Properties();

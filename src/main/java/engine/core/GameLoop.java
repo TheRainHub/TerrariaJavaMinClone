@@ -21,6 +21,13 @@ import javafx.scene.text.Text;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ * Main game loop that drives updating of game state and rendering of each frame.
+ * <p>
+ * Extends JavaFX's AnimationTimer to provide a continuous loop, handling input,
+ * physics/world updates, and drawing to the canvas.
+ * </p>
+ */
 public class GameLoop extends AnimationTimer {
     private long lastTime = 0;
 
@@ -33,13 +40,28 @@ public class GameLoop extends AnimationTimer {
     private final List<NPC> npcs;
     private final List<ItemEntity> items;
 
-    // Добавляем эти поля:
+    // Dimensions of the rendering canvas
     private final int width;
     private final int height;
+
+    // Background image for parallax effect (may be null)
     private final Image backgroundImage;
+
+    // Flag indicating the player has won the game
     private boolean gameWon = false;
+
     /**
-     * Теперь в конструктор передаём ширину/высоту холста и фон.
+     * Constructs a new GameLoop with all required subsystems.
+     *
+     * @param gc              the graphics context used for drawing
+     * @param scene           the JavaFX scene to listen for input events
+     * @param width           the width of the game canvas in pixels
+     * @param height          the height of the game canvas in pixels
+     * @param lvlMgr          the level manager controlling world data and rendering
+     * @param uiMgr           the UI manager handling pause menus and overlays
+     * @param input           the input handler for keyboard and mouse events
+     * @param player          the player entity to update and render
+     * @param backgroundImage the background image for parallax scrolling (nullable)
      */
     public GameLoop(GraphicsContext gc,
                     Scene scene,
@@ -63,6 +85,7 @@ public class GameLoop extends AnimationTimer {
         this.npcs    = lvlMgr.getNpcs();
         this.items   = lvlMgr.getItems();
 
+        // Register keyboard handlers for pause toggle and game input
         scene.addEventHandler(KeyEvent.KEY_PRESSED, e -> {
             if (e.getCode() == KeyCode.ESCAPE) {
                 uiMgr.togglePause();
@@ -73,14 +96,22 @@ public class GameLoop extends AnimationTimer {
             }
         });
 
+        // Register key release and mouse handlers
         scene.addEventHandler(KeyEvent.KEY_RELEASED, input::handleKeyRelease);
         scene.addEventHandler(MouseEvent.MOUSE_PRESSED, input::handleMousePress);
         scene.addEventHandler(MouseEvent.MOUSE_RELEASED, input::handleMouseRelease);
     }
 
+    /**
+     * Called every frame by JavaFX. Computes delta time and delegates to update
+     * and render methods.
+     *
+     * @param now timestamp in nanoseconds for the current frame
+     */
     @Override
     public void handle(long now) {
         if (lastTime == 0) {
+            // First frame initialization
             lastTime = now;
             return;
         }
@@ -91,43 +122,74 @@ public class GameLoop extends AnimationTimer {
         render();
     }
 
-    private void update(double dt) {
-        if (gameWon) return;
+    /**
+     * Returns the JavaFX scene associated with this game loop.
+     * <p>
+     * Note: simple getter, no side effects.
+     * </p>
+     *
+     * @return the Scene used for input and focus
+     */
+    public Scene getScene() {
+        return scene;
+    }
 
-        if (uiMgr.isPaused() || uiMgr.isCraftingOpen()) {
+    /**
+     * Updates game state: player, NPCs, items, and transitions, unless paused or game won.
+     *
+     * @param dt time elapsed since last frame in seconds
+     */
+    private void update(double dt) {
+        if (gameWon) {
+            // Stop any further game updates once won
             return;
         }
+
+        if (uiMgr.isPaused() || uiMgr.isCraftingOpen()) {
+            // Skip world updates when paused or crafting UI is open
+            return;
+        }
+
+        // Update player movement and physics
         player.update(dt, lvlMgr.getWorld());
+
+        // Center camera on player
         lvlMgr.getCamera().centerOn(player.getX(), player.getY());
 
+        // Update and remove collected items
         Iterator<ItemEntity> it = items.iterator();
         while (it.hasNext()) {
             if (it.next().update(player, lvlMgr.getWorld())) {
                 it.remove();
             }
         }
+
+        // Update all NPC entities
         for (NPC npc : npcs) {
             npc.update(dt, lvlMgr.getWorld());
         }
+
+        // Handle level transitions (e.g., entering new rooms)
         lvlMgr.checkTransitions(player);
     }
 
-    public Scene getScene() {
-        return scene;
-    }
-
+    /**
+     * Renders the entire game frame to the canvas, including background,
+     * world tiles, entities, and UI overlays.
+     */
     private void render() {
-        // 1) Очищаем холст
+        // 1) Clear the canvas
         gc.setGlobalAlpha(1.0);
         gc.clearRect(0, 0, width, height);
 
+        // 2) If the player has won, display a victory screen
         if (gameWon) {
             gc.setGlobalAlpha(1.0);
-            // полупрозрачный фон
+            // Semi-transparent dark overlay
             gc.setFill(Color.rgb(0, 0, 0, 0.75));
             gc.fillRect(0, 0, width, height);
 
-            // крупный золотой текст
+            // Large gold victory text
             String msg = "YOU WIN!";
             Font winFont = Font.font("Consolas", FontWeight.BOLD, 72);
             gc.setFont(winFont);
@@ -142,29 +204,36 @@ public class GameLoop extends AnimationTimer {
             gc.fillText(msg, x, y);
 
             return;
-
         }
-        // 2) Рисуем фон/parallax
+
+        // 3) Draw background with simple parallax effect if provided
         if (backgroundImage != null) {
-            double p = 0.2;
+            double parallaxFactor = 0.2;
             gc.drawImage(
                     backgroundImage,
-                    -lvlMgr.getCamera().getWorldX() * p,
-                    -lvlMgr.getCamera().getWorldY() * p,
+                    -lvlMgr.getCamera().getWorldX() * parallaxFactor,
+                    -lvlMgr.getCamera().getWorldY() * parallaxFactor,
                     width, height
             );
         } else {
+            // Fallback sky color
             gc.setFill(Color.CORNFLOWERBLUE);
             gc.fillRect(0, 0, width, height);
         }
 
-        // 3) Рисуем мир, предметы, NPC, игрока
+        // 4) Render world tiles and layers
         lvlMgr.renderWorld(gc);
-        for (ItemEntity item : items) item.render(gc, lvlMgr.getCamera());
-        for (NPC npc : npcs)         npc.render(gc, lvlMgr.getCamera());
+
+        // 5) Render dynamic entities: items, NPCs, and player
+        for (ItemEntity item : items) {
+            item.render(gc, lvlMgr.getCamera());
+        }
+        for (NPC npc : npcs) {
+            npc.render(gc, lvlMgr.getCamera());
+        }
         player.render(gc, lvlMgr.getCamera());
 
-        // 4) Рисуем UI поверх
+        // 6) Draw UI elements on top of everything
         uiMgr.renderUI(gc);
     }
 }

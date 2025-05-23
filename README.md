@@ -95,8 +95,11 @@ These steps will get you up and running quickly:
 
 ## Project Structure
 
-```
+
 ![alt text](MIWGame.png)
+
+
+```
 
 game-project/
 ├── pom.xml

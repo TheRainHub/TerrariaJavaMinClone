@@ -43,6 +43,7 @@ These steps will get you up and running quickly:
    java -jar target/GameApp.jar
    ```
 5. **Play!** A window sized 1720×820 px will appear.
+<img width="1686" height="574" alt="image-2" src="https://github.com/user-attachments/assets/a4d98f4b-cfed-4e37-b100-46b772a57120" />
 
 ---
 
@@ -91,6 +92,7 @@ These steps will get you up and running quickly:
 ---
 
 ## Project Structure
+<img width="6560" height="9898" alt="MIWGame-1" src="https://github.com/user-attachments/assets/6ff06b2d-312f-4ed6-a931-7308b203bffe" />
 
 ```
 game-project/
